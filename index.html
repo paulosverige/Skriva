@@ -1,0 +1,152 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Skriva på svenska</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0b5cad"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Skriva"><link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{--bg:#fbfaf6;--fg:#1c2330;--mut:#667085;--card:#fff;--bd:#e3e0d6;--ac:#0b5cad;--acf:#fff;--ok:#1a7f4b;--bad:#b42318;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161d;--fg:#e8eaf0;--mut:#9aa3b2;--card:#1a2029;--bd:#2b3340;--ac:#6cb0ff;--acf:#0d1117;--ok:#4cc38a;--bad:#ff8a80}}
+:root[data-theme="dark"]{--bg:#12161d;--fg:#e8eaf0;--mut:#9aa3b2;--card:#1a2029;--bd:#2b3340;--ac:#6cb0ff;--acf:#0d1117;--ok:#4cc38a;--bad:#ff8a80}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+.w{max-width:720px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 2px}.mut{color:var(--mut);font-size:14px}
+nav{display:flex;gap:6px;overflow-x:auto;margin:14px 0}
+nav button,.b{font:inherit;border:1px solid var(--bd);background:var(--card);color:var(--fg);padding:8px 14px;border-radius:10px;cursor:pointer;white-space:nowrap}
+nav button.on,.b.p{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:12px}
+.chip{display:inline-block;font-size:12px;border:1px solid var(--bd);border-radius:20px;padding:2px 10px;color:var(--mut)}
+.big{font-size:19px;margin:10px 0}
+textarea{width:100%;box-sizing:border-box;font:inherit;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:10px;padding:10px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.t{min-height:44px;border:1px dashed var(--bd);border-radius:10px;padding:6px;display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.o{display:block;width:100%;text-align:left;margin:6px 0}
+.o.ok{border-color:var(--ok)}.o.bad{border-color:var(--bad)}
+.bar{height:8px;background:var(--bd);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
+li{margin:4px 0}
+body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent}.w{padding-bottom:96px}
+input{width:100%;box-sizing:border-box;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--fg);margin-top:8px}
+nav{position:fixed;left:0;right:0;bottom:0;margin:0;gap:2px;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--bd);z-index:9}
+nav button{flex:1;border:0;font-size:12px;padding:10px 2px;background:transparent}nav button.on{background:var(--ac);color:var(--acf)}
+</style></head><body><div class="w">
+<h1>Skriva på svenska</h1><div class="mut">Build sentences, drill the rules that trip you up, get corrections. <span id="ai"></span></div>
+<nav id="nav"></nav><div id="v"></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>s.toLowerCase().replace(/[.,!?;:"]/g,'').replace(/\s+/g,' ').trim();
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+let S={r:{}};try{S=JSON.parse(localStorage.getItem('sv')||'{"r":{}}')}catch(e){}S.r=S.r||{};
+const save=()=>{try{localStorage.setItem('sv',JSON.stringify(S))}catch(e){}};
+const rec=(k,ok)=>{(S.r[k]=S.r[k]||[0,0])[ok?0:1]++;save()};
+let SAMPLE=null;
+function mk(){const k=S.k;if(!k)return null;return async p=>{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:S.mod||'claude-haiku-5-5',max_tokens:1000,messages:[{role:'user',content:p}]})});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();return{text:d.content.map(x=>x.text||'').join('')}}}
+function initAI(){SAMPLE=mk();$('#ai').textContent=SAMPLE?'AI feedback on.':'Add an API key in Settings for AI feedback.'}
+initAI();
+
+const TR=[
+["Yesterday I went to the shop because I needed milk.",["igår gick jag till affären eftersom jag behövde mjölk"],"V2 word order","After a time word the verb comes second: Igår gick jag."],
+["I don't know why he isn't here.",["jag vet inte varför han inte är här"],"Subclause order","In a subclause, inte goes before the verb."],
+["If it rains tomorrow, we will stay at home.",["om det regnar imorgon stannar vi hemma"],"V2 word order","After a subclause, the main verb comes next: ... stannar vi."],
+["I have lived in Sweden for three years.",["jag har bott i sverige i tre år"],"Tenses","Use har + supine for something still true."],
+["The big house is very old.",["det stora huset är mycket gammalt"],"Agreement","Double definiteness: det stora huset."],
+["She said that she would come later.",["hon sa att hon skulle komma senare"],"Subclause order","Use skulle + infinitive for 'would'."],
+["On Saturdays I usually meet my friends.",["på lördagar träffar jag oftast mina vänner"],"V2 word order","Start with the time phrase, then verb, then subject."],
+["I want to learn Swedish better.",["jag vill lära mig svenska bättre"],"Reflexives","lära sig is reflexive: lära mig."],
+["Last summer we visited a small town that I really liked.",["förra sommaren besökte vi en liten stad som jag gillade mycket","förra sommaren besökte vi en liten stad som jag verkligen gillade"],"Agreement","en liten stad, and a som-clause with normal order."],
+["Why haven't you called me?",["varför har du inte ringt mig"],"Questions","Question word, verb, subject, inte, supine."]];
+const TL=[
+["Idag åker jag till Stockholm med tåget","V2: the verb stays second after Idag."],
+["Jag vet att han inte kommer idag","Subclause: inte before the verb."],
+["Varför har du inte ringt mig","Question word, verb, subject."],
+["Om du vill kan vi ses imorgon","After the om-clause, the verb comes first in the main clause."],
+["Igår träffade jag min syster på caféet","V2 with a time word first."],
+["Hon sa att hon aldrig har varit i Norge","Subclause: adverb before har."],
+["Nästa vecka ska vi flytta till en ny lägenhet","V2 with ska as the second element."],
+["Det är viktigt att du alltid säger sanningen","att-clause: alltid before the verb."]];
+const QZ=[
+["Imorgon ___ till Malmö.",["jag åker","åker jag","åker imorgon jag"],1,"V2 word order","The verb must be second element."],
+["Jag vet att han ___ kommer.",["inte","kommer inte","inte han"],0,"Subclause order","Adverbs sit before the verb in subclauses."],
+["Pick the correct sentence.",["Jag har gått till affären igår.","Jag gick till affären igår.","Jag går till affären igår."],1,"Tenses","A finished, specific time uses preteritum."],
+["Två ___",["böcker","boken","bokar"],0,"Plurals","bok, böcker, böckerna."],
+["Han tvättar ___.",["honom","sig","sin"],1,"Reflexives","The object is the subject itself: sig."],
+["Maria tar ___ bil till jobbet. (her own)",["hennes","sin","hans"],1,"Reflexives","sin refers back to the subject."],
+["Jag måste ___ hem nu.",["gå","går","gick"],0,"Verb forms","After a modal, use the infinitive."],
+["Vi har ___ pizza.",["äter","åt","ätit"],2,"Tenses","har + supine."],
+["Boken ___ av många.",["läser","läses","läst"],1,"Verb forms","The s-passive."],
+["Jag är intresserad ___ musik.",["av","för","i"],0,"Prepositions","intresserad av."],
+["Det är ___ stort hus.",["en","ett","ena"],1,"Agreement","hus is an ett-word."],
+["Den ___ bilen är min.",["röd","rött","röda"],2,"Agreement","After den, the adjective takes -a."],
+["Huset är ___.",["gammal","gammalt","gamla"],1,"Agreement","Ett-word predicate takes -t."],
+["Om det regnar ___ hemma.",["stannar vi","vi stannar","vi hemma stannar"],0,"V2 word order","Inversion after a fronted subclause."],
+["Hon är ___ än jag.",["äldre","mer gammal","gammlare"],0,"Comparatives","Irregular: gammal, äldre, äldst."]];
+const FW=[["Describe your last weekend.","Past tense, 5 to 8 sentences, start some with a time word."],["Explain your job to someone who has never heard of it.","Present tense, include at least two att-clauses."],["Write about a place you want to visit and why.","Use skulle and vill."],["Tell a short story about something that went wrong.","Mix preteritum and perfekt."],["Give your opinion on remote work.","Use eftersom, men, om and att."],["Write an email asking to change a meeting time.","Polite requests with kan, skulle kunna."]];
+
+const tabs=[["tr","Translate"],["ord","Order"],["gr","Grammar"],["fr","Write"],["pr","Progress"],["st","Settings"]];
+let tab='tr';
+$('#nav').innerHTML=tabs.map(t=>`<button data-t="${t[0]}">${t[1]}</button>`).join('');
+$('#nav').onclick=e=>{const t=e.target.dataset.t;if(t){tab=t;draw()}};
+function draw(){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));({tr:vTr,ord:vOrd,gr:vGr,fr:vFr,pr:vPr,st:vSt})[tab]()}
+
+async function ai(task,learner,ref){
+  if(!SAMPLE)return null;
+  const p=`You are a kind, precise Swedish teacher. The learner is B1, native Portuguese, speaks English. ${task}\nLearner text: """${learner}"""\n${ref?'Reference: '+ref+'\n':''}Reply with ONLY JSON: {"corrected":"fixed Swedish, minimal changes","errors":[{"wrong":"","right":"","rule":"short rule in English"}],"tip":"one sentence on the main pattern to practice","score":0-5}. If it is already correct, errors is [] and score 5.`;
+  try{const r=await SAMPLE(p,{modelTier:"quick",cache:false});
+    const j=JSON.parse(r.text.replace(/```json|```/g,'').trim());(j.errors||[]).forEach(x=>{if(x.wrong&&x.right){S.mx=(S.mx||[]).filter(y=>y.wrong!==x.wrong);S.mx.unshift(x);S.mx=S.mx.slice(0,40)}});save();return j}catch(e){return {err:true}}
+}
+const fb=r=>!r?'<p class="mut">AI feedback is unavailable here, compare with the model answer.</p>':r.err?'<p class="mut">Feedback failed this time. Try again.</p>':
+`<p><b>Corrected:</b> ${esc(r.corrected)}</p>${(r.errors||[]).length?'<ul>'+r.errors.map(x=>`<li><span class="bad">${esc(x.wrong)}</span> → <span class="ok">${esc(x.right)}</span><br><span class="mut">${esc(x.rule)}</span></li>`).join('')+'</ul>':'<p class="ok">No errors found.</p>'}<p class="mut">${esc(r.tip||'')}</p>`;
+
+let ti=0;
+function vTr(){const it=TR[ti];
+  $('#v').innerHTML=`<div class="c"><span class="chip">${esc(it[2])}</span><div class="big">${esc(it[0])}</div><div class="mut">Hint: ${esc(it[3])}</div>
+  <textarea id="a" rows="2" placeholder="Skriv på svenska..."></textarea>
+  <div class="row"><button class="b p" id="ck">Check</button><button class="b" id="nx">Next</button></div><div id="o"></div></div>`;
+  $('#nx').onclick=()=>{ti=(ti+1+Math.random()*(TR.length-1)|0)%TR.length;vTr()};
+  $('#ck').onclick=async()=>{const v=$('#a').value.trim();if(!v)return;
+    const hit=it[1].includes(norm(v));rec(it[2],hit);
+    $('#o').innerHTML=`<p class="${hit?'ok':'bad'}">${hit?'Matches the model answer.':'Different from the model answer, which is not always wrong.'}</p><p><b>Model:</b> ${esc(it[1][0].replace(/^./,c=>c.toUpperCase()))}.</p><p class="mut" id="f">${SAMPLE?'Checking...':''}</p>`;
+    const r=await ai(`Task: translate "${it[0]}" into Swedish. Judge the learner's version fairly; other valid phrasings are fine.`,v,it[1][0]);
+    $('#f').outerHTML='<div>'+fb(r)+'</div>'}}
+
+let oi=0,pool=[],put=[];
+function vOrd(){const it=TL[oi],w=it[0].split(' ');if(!pool.length&&!put.length)pool=shuf(w.map((x,i)=>[x,i]));
+  const tl=(a,k)=>a.map((x,i)=>`<button class="b" data-k="${k}" data-i="${i}">${esc(x[0])}</button>`).join('');
+  $('#v').innerHTML=`<div class="c"><span class="chip">Build the sentence</span><div class="mut" style="margin-top:8px">${esc(it[1])}</div>
+  <div class="t" id="pt">${tl(put,'p')}</div><div class="t" style="border-style:solid">${tl(pool,'q')}</div>
+  <div class="row"><button class="b p" id="ck">Check</button><button class="b" id="rs">Reset</button><button class="b" id="nx">Next</button></div><div id="o"></div></div>`;
+  $('#v').onclick=e=>{const d=e.target.dataset;if(!d.k)return;
+    if(d.k==='q')put.push(pool.splice(+d.i,1)[0]);else pool.push(put.splice(+d.i,1)[0]);vOrd()};
+  $('#rs').onclick=()=>{pool=shuf(put.concat(pool));put=[];vOrd()};
+  $('#nx').onclick=()=>{oi=(oi+1)%TL.length;pool=[];put=[];vOrd()};
+  $('#ck').onclick=()=>{const hit=norm(put.map(x=>x[0]).join(' '))===norm(it[0]);if(put.length===w.length)rec('V2 word order',hit);
+    $('#o').innerHTML=hit?'<p class="ok">Correct.</p>':`<p class="bad">Not quite.</p><p class="mut">Target: ${esc(it[0])}. Other orders can be valid, but this one shows the rule.</p>`}}
+
+let qi=0;
+function vGr(){const q=QZ[qi];
+  $('#v').innerHTML=`<div class="c"><span class="chip">${esc(q[3])}</span><div class="big">${esc(q[0])}</div>${q[1].map((o,i)=>`<button class="b o" data-i="${i}">${esc(o)}</button>`).join('')}<div id="o"></div><div class="row"><button class="b" id="nx">Next</button></div></div>`;
+  $('#nx').onclick=()=>{qi=(qi+1+Math.random()*(QZ.length-1)|0)%QZ.length;vGr()};
+  document.querySelectorAll('.o').forEach(b=>b.onclick=()=>{if($('#o').innerHTML)return;const i=+b.dataset.i,ok=i===q[2];rec(q[3],ok);
+    b.classList.add(ok?'ok':'bad');document.querySelectorAll('.o')[q[2]].classList.add('ok');
+    $('#o').innerHTML=`<p class="${ok?'ok':'bad'}">${ok?'Rätt!':'Inte riktigt.'} <span class="mut">${esc(q[4])}</span></p>`})}
+
+let fi=0;
+function vFr(){const p=FW[fi];
+  $('#v').innerHTML=`<div class="c"><span class="chip">Free writing</span><div class="big">${esc(p[0])}</div><div class="mut">${esc(p[1])}</div>
+  <textarea id="a" rows="8" placeholder="Skriv här..."></textarea>
+  <div class="row"><button class="b p" id="ck">Get corrections</button><button class="b" id="nx">New topic</button></div><div id="o"></div></div>`;
+  $('#nx').onclick=()=>{fi=(fi+1)%FW.length;vFr()};
+  $('#ck').onclick=async()=>{const v=$('#a').value.trim();if(!v)return;
+    if(!SAMPLE){$('#o').innerHTML='<p class="mut">AI feedback is not available here. Self-check: verb in second place in main clauses? inte before the verb in subclauses? en/ett and adjective endings right? Right tense for each time reference?</p>';return}
+    $('#o').innerHTML='<p class="mut">Reading your text...</p>';
+    const r=await ai(`Task: correct this free-writing piece on "${p[0]}". List at most 8 of the most important errors, most instructive first.`,v);
+    if(r&&!r.err)rec('Free writing',(r.score||0)>=4);$('#o').innerHTML=fb(r)}}
+
+function vPr(){const k=Object.keys(S.r);
+  $('#v').innerHTML=`<div class="c"><b>Accuracy by topic</b>${k.length?k.map(n=>{const [a,b]=S.r[n],t=a+b;return `<div style="margin-top:12px">${esc(n)} <span class="mut">${a}/${t}</span><div class="bar"><i style="width:${a/t*100}%"></i></div></div>`}).join(''):'<p class="mut">Nothing yet. Do a few exercises first.</p>'}
+  <p class="mut">Lowest bars are where to practice next.</p>${(S.mx||[]).length?'<b>Recent mistakes</b><ul>'+S.mx.slice(0,15).map(x=>`<li><span class="bad">${esc(x.wrong)}</span> → <span class="ok">${esc(x.right)}</span><br><span class="mut">${esc(x.rule||'')}</span></li>`).join('')+'</ul>':''}<button class="b" id="rs">Reset progress</button></div>`;
+  $('#rs').onclick=()=>{if(confirm('Reset all progress?')){S={r:{},k:S.k,mod:S.mod,mx:[]};save();vPr()}}}
+function vSt(){$('#v').innerHTML=`<div class="c"><b>AI feedback</b><p class="mut">Your key is stored only on this device and sent only to api.anthropic.com. Without a key, every exercise still works offline.</p><input id="k" type="password" placeholder="sk-ant-..." autocomplete="off" value="${esc(S.k||'')}"><input id="md" value="${esc(S.mod||'claude-haiku-5-5')}"><div class="row"><button class="b p" id="sv">Save</button><button class="b" id="ts">Test</button></div><div id="o"></div></div>`;
+  $('#sv').onclick=()=>{S.k=$('#k').value.trim();S.mod=$('#md').value.trim()||'claude-haiku-5-5';save();initAI();$('#o').innerHTML='<p class="ok">Saved.</p>'};
+  $('#ts').onclick=async()=>{$('#sv').click();if(!SAMPLE){$('#o').innerHTML='<p class="bad">Enter a key first.</p>';return}
+    $('#o').innerHTML='<p class="mut">Testing...</p>';try{await SAMPLE('Reply with: ok');$('#o').innerHTML='<p class="ok">Works.</p>'}catch(e){$('#o').innerHTML='<p class="bad">Failed ('+esc(e.message)+'). Check the key and model name.</p>'}}}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+draw();
+</script></body></html>
