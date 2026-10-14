@@ -22,22 +22,22 @@ textarea{width:100%;box-sizing:border-box;font:inherit;background:var(--bg);colo
 .bar{height:8px;background:var(--bd);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
 li{margin:4px 0}
 body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent}.w{padding-bottom:96px}
-input{width:100%;box-sizing:border-box;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--fg);margin-top:8px}
+input,select{width:100%;box-sizing:border-box;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--fg);margin-top:8px}
 nav{position:fixed;left:0;right:0;bottom:0;margin:0;gap:2px;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--bd);z-index:9}
 nav button{flex:1;border:0;font-size:12px;padding:10px 2px;background:transparent}nav button.on{background:var(--ac);color:var(--acf)}
 </style></head><body><div class="w">
-<h1>Skriva på svenska</h1><div class="mut">Build sentences, drill the rules that trip you up, get corrections. <span id="ai"></span></div>
+<h1>Skriva på svenska <button class="b" id="gs" style="float:right;padding:2px 10px">⚙</button></h1><div class="mut">Build sentences, drill the rules that trip you up, get corrections. <span id="ai"></span></div>
 <nav id="nav"></nav><div id="v"></div></div>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm=s=>s.toLowerCase().replace(/[.,!?;:"]/g,'').replace(/\s+/g,' ').trim();
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
-let S={r:{}};try{S=JSON.parse(localStorage.getItem('sv')||'{"r":{}}')}catch(e){}S.r=S.r||{};
+let S={r:{}};try{S=JSON.parse(localStorage.getItem('sv')||'{"r":{}}')}catch(e){}S.r=S.r||{};S.lib=S.lib||[];S.cur=S.cur||{};
 const save=()=>{try{localStorage.setItem('sv',JSON.stringify(S))}catch(e){}};
 const rec=(k,ok)=>{(S.r[k]=S.r[k]||[0,0])[ok?0:1]++;save()};
 let SAMPLE=null;
-function mk(){const k=S.k;if(!k)return null;return async p=>{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:S.mod||'claude-haiku-5-5',max_tokens:1000,messages:[{role:'user',content:p}]})});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();return{text:d.content.map(x=>x.text||'').join('')}}}
+function mk(){const k=S.k;if(!k)return null;return async(p,o)=>{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:S.mod||'claude-haiku-5-5',max_tokens:(o&&o.max)||1000,messages:[{role:'user',content:p}]})});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();return{text:d.content.map(x=>x.text||'').join('')}}}
 function initAI(){SAMPLE=mk();$('#ai').textContent=SAMPLE?'AI feedback on.':'Add an API key in Settings for AI feedback.'}
 initAI();
 
@@ -79,11 +79,14 @@ const QZ=[
 ["Hon är ___ än jag.",["äldre","mer gammal","gammlare"],0,"Comparatives","Irregular: gammal, äldre, äldst."]];
 const FW=[["Describe your last weekend.","Past tense, 5 to 8 sentences, start some with a time word."],["Explain your job to someone who has never heard of it.","Present tense, include at least two att-clauses."],["Write about a place you want to visit and why.","Use skulle and vill."],["Tell a short story about something that went wrong.","Mix preteritum and perfekt."],["Give your opinion on remote work.","Use eftersom, men, om and att."],["Write an email asking to change a meeting time.","Polite requests with kan, skulle kunna."]];
 
-const tabs=[["tr","Translate"],["ord","Order"],["gr","Grammar"],["fr","Write"],["pr","Progress"],["st","Settings"]];
-let tab='tr';
+const CUR=["V2 word order","Subclause word order","Questions and inversion","Perfect vs preteritum","Past perfect (hade + supine)","Modal verbs","Reflexive verbs","sin/sitt/sina vs hans/hennes","En/ett and plurals","Definite forms and double definiteness","Adjective agreement","Comparatives and superlatives","Pronouns: man, den/det, hen","Prepositions of place and time","Verb particles","The s-passive","Conjunctions (att, eftersom, medan, trots att)","Relative clauses with som","Conditionals (om, skulle)","Reported speech","Adverb placement","Polite requests and imperatives","Formal emails","Essay connectors (dessutom, ändå, därför)"];
+function lpool(l){l.items.forEach(x=>{if(x.t==='mc'&&!QZ.some(q=>q[0]===x.q))QZ.push([x.q,x.o,x.a,l.rule,x.why||'']);if(x.t==='tr'&&!TR.some(q=>q[0]===x.p))TR.push([x.p,x.a.map(norm),l.rule,x.h||''])})}
+S.lib.forEach(lpool);
+const tabs=[["ls","Lessons"],["tr","Translate"],["ord","Order"],["gr","Grammar"],["fr","Write"],["pr","Progress"]];
+let tab='ls';
 $('#nav').innerHTML=tabs.map(t=>`<button data-t="${t[0]}">${t[1]}</button>`).join('');
 $('#nav').onclick=e=>{const t=e.target.dataset.t;if(t){tab=t;draw()}};
-function draw(){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));({tr:vTr,ord:vOrd,gr:vGr,fr:vFr,pr:vPr,st:vSt})[tab]()}
+function draw(){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));({ls:vLs,tr:vTr,ord:vOrd,gr:vGr,fr:vFr,pr:vPr,st:vSt})[tab]()}
 
 async function ai(task,learner,ref){
   if(!SAMPLE)return null;
@@ -142,11 +145,44 @@ function vFr(){const p=FW[fi];
 function vPr(){const k=Object.keys(S.r);
   $('#v').innerHTML=`<div class="c"><b>Accuracy by topic</b>${k.length?k.map(n=>{const [a,b]=S.r[n],t=a+b;return `<div style="margin-top:12px">${esc(n)} <span class="mut">${a}/${t}</span><div class="bar"><i style="width:${a/t*100}%"></i></div></div>`}).join(''):'<p class="mut">Nothing yet. Do a few exercises first.</p>'}
   <p class="mut">Lowest bars are where to practice next.</p>${(S.mx||[]).length?'<b>Recent mistakes</b><ul>'+S.mx.slice(0,15).map(x=>`<li><span class="bad">${esc(x.wrong)}</span> → <span class="ok">${esc(x.right)}</span><br><span class="mut">${esc(x.rule||'')}</span></li>`).join('')+'</ul>':''}<button class="b" id="rs">Reset progress</button></div>`;
-  $('#rs').onclick=()=>{if(confirm('Reset all progress?')){S={r:{},k:S.k,mod:S.mod,mx:[]};save();vPr()}}}
-function vSt(){$('#v').innerHTML=`<div class="c"><b>AI feedback</b><p class="mut">Your key is stored only on this device and sent only to api.anthropic.com. Without a key, every exercise still works offline.</p><input id="k" type="password" placeholder="sk-ant-..." autocomplete="off" value="${esc(S.k||'')}"><input id="md" value="${esc(S.mod||'claude-haiku-5-5')}"><div class="row"><button class="b p" id="sv">Save</button><button class="b" id="ts">Test</button></div><div id="o"></div></div>`;
+  $('#rs').onclick=()=>{if(confirm('Reset all progress?')){S={r:{},k:S.k,mod:S.mod,mx:[],lib:S.lib,cur:{},lv:S.lv};save();vPr()}}}
+function vSt0(){$('#v').innerHTML=`<div class="c"><b>AI feedback</b><p class="mut">Your key is stored only on this device and sent only to api.anthropic.com. Without a key, every exercise still works offline.</p><input id="k" type="password" placeholder="sk-ant-..." autocomplete="off" value="${esc(S.k||'')}"><input id="md" value="${esc(S.mod||'claude-haiku-5-5')}"><div class="row"><button class="b p" id="sv">Save</button><button class="b" id="ts">Test</button></div><div id="o"></div></div>`;
   $('#sv').onclick=()=>{S.k=$('#k').value.trim();S.mod=$('#md').value.trim()||'claude-haiku-5-5';save();initAI();$('#o').innerHTML='<p class="ok">Saved.</p>'};
   $('#ts').onclick=async()=>{$('#sv').click();if(!SAMPLE){$('#o').innerHTML='<p class="bad">Enter a key first.</p>';return}
     $('#o').innerHTML='<p class="mut">Testing...</p>';try{await SAMPLE('Reply with: ok');$('#o').innerHTML='<p class="ok">Works.</p>'}catch(e){$('#o').innerHTML='<p class="bad">Failed ('+esc(e.message)+'). Check the key and model name.</p>'}}}
+const okL=l=>l&&l.title&&l.explain&&Array.isArray(l.items)&&(l.items=l.items.filter(x=>x&&((x.t==='mc'&&Array.isArray(x.o)&&x.o.length>1&&Number.isInteger(x.a)&&x.a>=0&&x.a<x.o.length)||((x.t==='tr'||x.t==='fix')&&x.p&&Array.isArray(x.a)&&x.a.length))),l.items.length>=4);
+async function gen(topic){const lv=S.lv||'B1',avoid=S.lib.slice(0,25).map(l=>l.title).join('; '),errs=(S.mx||[]).slice(0,8).map(x=>x.wrong+' -> '+x.right).join('; ');
+  const p=`You are a Swedish teacher. Create ONE lesson at CEFR ${lv} on: "${topic}". The learner (native Portuguese, speaks English) can read well but struggles to produce sentences, so favour writing over recognising. Use fresh vocabulary and varied everyday contexts. Do not repeat these earlier lessons: ${avoid||'none'}. ${errs?'Recent learner mistakes to weave in: '+errs+'.':''} Reply with ONLY JSON: {"title":"","rule":"short rule name","explain":"3-5 sentences in English plus 3 Swedish example sentences on new lines","items":[...8 items...]}. Item shapes: {"t":"mc","q":"","o":["","",""],"a":0,"why":""}, {"t":"tr","p":"English sentence","a":["accepted Swedish","alternative"],"h":"hint"}, {"t":"fix","p":"Swedish sentence with ONE error","a":["corrected sentence"],"h":"hint"}. Use 3 mc, 3 tr, 2 fix, mixed order. Swedish must be natural and correct.`;
+  const r=await SAMPLE(p,{max:3500}),t=r.text,l=JSON.parse(t.slice(t.indexOf('{'),t.lastIndexOf('}')+1));
+  if(!okL(l))throw new Error('bad lesson');l.id=Date.now();l.topic=topic;l.lv=lv;l.sc=null;S.lib.unshift(l);lpool(l);save();return l}
+function vLs(){const o=['Weak spots (adaptive)'].concat(CUR).map(t=>`<option value="${esc(t)}">${S.cur[t]!=null?'✓ ':''}${esc(t)}</option>`).join('');
+  $('#v').innerHTML=`<div class="c"><b>New lesson</b><p class="mut">Every lesson is generated fresh, so the library keeps growing. Weak spots targets your lowest topic and recent mistakes.</p><select id="tp">${o}</select><input id="cu" placeholder="Or your own topic, e.g. at the doctor, job interview"><select id="lv">${['B1','B1+','B2'].map(x=>`<option${(S.lv||'B1')===x?' selected':''}>${x}</option>`).join('')}</select><div class="row"><button class="b p" id="gn">Generate lesson</button></div><div id="o"></div></div>
+  <b>Library (${S.lib.length})</b>${S.lib.map(l=>`<button class="b o" data-id="${l.id}"><b>${esc(l.title)}</b><br><span class="mut">${esc(l.topic)} · ${esc(l.lv)} · ${l.sc!=null?l.sc+'/'+l.items.length:'new'}</span></button>`).join('')||'<p class="mut">No lessons yet.</p>'}`;
+  document.querySelectorAll('#v .o[data-id]').forEach(b=>b.onclick=()=>{LV={l:S.lib.find(x=>String(x.id)===b.dataset.id),i:-1,sc:0};vLv()});
+  $('#lv').onchange=()=>{S.lv=$('#lv').value;save()};
+  $('#gn').onclick=async()=>{if(!SAMPLE){$('#o').innerHTML='<p class="bad">Add your API key in Settings (gear icon) to generate lessons.</p>';return}
+    const t=$('#tp').value,cu=$('#cu').value.trim();S.lv=$('#lv').value;let topic=cu||t;
+    if(!cu&&t.startsWith('Weak')){const w=Object.entries(S.r).filter(e=>e[1][0]+e[1][1]>=3).sort((a,b)=>a[1][0]/(a[1][0]+a[1][1])-b[1][0]/(b[1][0]+b[1][1]))[0];topic=w?w[0]:CUR[Math.random()*CUR.length|0]}
+    $('#o').innerHTML='<p class="mut">Writing your lesson, about 15 seconds...</p>';$('#gn').disabled=true;
+    try{LV={l:await gen(topic),i:-1,sc:0};vLv()}catch(e){$('#o').innerHTML='<p class="bad">Could not build a lesson ('+esc(e.message)+'). Try again.</p>';$('#gn').disabled=false}}}
+let LV=null;
+function vLv(){const l=LV.l,n=l.items.length,bk=()=>{LV=null;vLs()};
+  if(LV.i<0){$('#v').innerHTML=`<div class="c"><span class="chip">${esc(l.rule)}</span><div class="big">${esc(l.title)}</div><p style="white-space:pre-wrap">${esc(l.explain)}</p><div class="row"><button class="b p" id="go">Start (${n} exercises)</button><button class="b" id="bk">Back</button><button class="b" id="dl">Delete</button></div></div>`;
+    $('#go').onclick=()=>{LV.i=0;vLv()};$('#bk').onclick=bk;$('#dl').onclick=()=>{if(confirm('Delete this lesson?')){S.lib=S.lib.filter(x=>x!==l);save();bk()}};return}
+  if(LV.i>=n){l.sc=LV.sc;S.cur[l.topic]=Math.max(S.cur[l.topic]||0,LV.sc);save();
+    $('#v').innerHTML=`<div class="c"><div class="big">${LV.sc} / ${n}</div><p class="mut">${esc(l.title)}</p><div class="row"><button class="b p" id="bk">Back to lessons</button><button class="b" id="rp">Retry</button></div></div>`;$('#bk').onclick=bk;$('#rp').onclick=()=>{LV={l,i:0,sc:0};vLv()};return}
+  const it=l.items[LV.i],hd=`<span class="chip">${LV.i+1}/${n}</span> <span class="chip">${esc(l.rule)}</span>`,nx=`<div class="row"><button class="b p" id="nx">${LV.i+1<n?'Next':'Finish'}</button></div>`,next=()=>{LV.i++;vLv()};let done=false;
+  if(it.t==='mc'){$('#v').innerHTML=`<div class="c">${hd}<div class="big">${esc(it.q)}</div>${it.o.map((x,i)=>`<button class="b o" data-i="${i}">${esc(x)}</button>`).join('')}<div id="o"></div></div>`;
+    document.querySelectorAll('#v .o').forEach(b=>b.onclick=()=>{if(done)return;done=true;const i=+b.dataset.i,ok=i===it.a;rec(l.rule,ok);if(ok)LV.sc++;b.classList.add(ok?'ok':'bad');document.querySelectorAll('#v .o')[it.a].classList.add('ok');
+      $('#o').innerHTML=`<p class="${ok?'ok':'bad'}">${ok?'Rätt!':'Inte riktigt.'} <span class="mut">${esc(it.why||'')}</span></p>`+nx;$('#nx').onclick=next})}
+  else{$('#v').innerHTML=`<div class="c">${hd}<div class="mut">${it.t==='fix'?'Find the error and rewrite the sentence correctly:':'Translate into Swedish:'}</div><div class="big">${esc(it.p)}</div>${it.h?`<div class="mut">Hint: ${esc(it.h)}</div>`:''}<textarea id="a" rows="2"></textarea><div class="row"><button class="b p" id="ck">Check</button></div><div id="o"></div></div>`;
+    $('#ck').onclick=async()=>{const v=$('#a').value.trim();if(!v||done)return;done=true;const ok=it.a.map(norm).includes(norm(v));rec(l.rule,ok);if(ok)LV.sc++;
+      $('#o').innerHTML=`<p class="${ok?'ok':'bad'}">${ok?'Correct!':'Different from the model answer, which is not always wrong.'}</p><p><b>Model:</b> ${esc(it.a[0])}</p><p class="mut" id="f"></p>`+nx;$('#nx').onclick=next;
+      if(!ok&&SAMPLE){$('#f').textContent='Checking...';const r=await ai(`Task: the learner answers "${it.p}" (${it.t==='fix'?'fix the error':'translate to Swedish'}). Judge fairly; other valid phrasings are fine.`,v,it.a[0]),f=$('#f');if(f)f.outerHTML='<div>'+fb(r)+'</div>'}}}}
+function vSt(){vSt0();$('#v').insertAdjacentHTML('beforeend','<div class="c"><b>Backup</b><p class="mut">Lessons and progress live on each device. Copy a backup here, restore it on your other device.</p><div class="row"><button class="b" id="bc">Copy backup</button><button class="b" id="br">Restore</button></div></div>');
+  $('#bc').onclick=()=>{const j=JSON.stringify({...S,k:undefined});navigator.clipboard.writeText(j).then(()=>alert('Backup copied'),()=>prompt('Copy this:',j))};
+  $('#br').onclick=()=>{const t=prompt('Paste backup');if(!t)return;try{const b=JSON.parse(t);S=Object.assign({r:{}},b,{k:S.k,mod:S.mod});S.lib=S.lib||[];S.cur=S.cur||{};S.mx=S.mx||[];save();alert('Restored. Reload the app.')}catch(e){alert('Not a valid backup')}}}
+$('#gs').onclick=()=>{tab='st';draw()};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 draw();
 </script></body></html>
